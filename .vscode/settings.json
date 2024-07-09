@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "xprintf.h": "c",
+        "uart_lib.h": "c",
+        "mik32_hal.h": "c",
+        "spifi.h": "c"
+    }
+}
