@@ -3,6 +3,15 @@
         "xprintf.h": "c",
         "uart_lib.h": "c",
         "mik32_hal.h": "c",
-        "spifi.h": "c"
+        "spifi.h": "c",
+        "utils.h": "c",
+        "mik32_hal_pcc.h": "c",
+        "mik32_hal_gpio.h": "c",
+        "mik32_hal_def.h": "c",
+        "uart.h": "c",
+        "unistd.h": "c",
+        "cstdlib": "c",
+        "mik32_hal_irq.h": "c",
+        "mik32_hal_scr1_timer.h": "c"
     }
 }
