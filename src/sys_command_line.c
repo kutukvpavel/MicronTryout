@@ -86,7 +86,6 @@ const char				cli_log_help[]				= "Controls which logs are displayed."
 													  "\n\t\"log on/off all\" to enable/disable all logs"
 													  "\n\t\"log on/off [CAT1 CAT2 CAT...]\" to enable/disable the logs for categories [CAT1 CAT2 CAT...]";
 bool 					cli_password_ok 			= false;
-volatile bool			cli_tx_isr_flag				= false; /*< This flag is used internally so that _write will not write text in the console if the previous call is not over yet */
 
 /*******************************************************************************
  *
@@ -240,13 +239,6 @@ void cli_init()
  */
 void cli_uart_rxcplt_callback(unsigned char rx){
 	shell_queue_in(&cli_rx_buff, &rx);
-}
-
-/*
- * Callback function for UART IRQ when it is done transmitting data
- */
-void cli_uart_txcplt_callback() {    
-	cli_tx_isr_flag = false;
 }
 
 /**

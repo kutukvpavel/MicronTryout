@@ -40,4 +40,3 @@ extern inline void delay_ms(uint32_t ms);
 
 extern void interrupt_handler(void);
 extern void cli_uart_rxcplt_callback(unsigned char rx);
-extern void cli_uart_txcplt_callback(void);

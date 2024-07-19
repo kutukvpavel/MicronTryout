@@ -22,17 +22,11 @@ void trap_handler()
             unsigned char rx = (unsigned char)UART_ReadByte(UART_STDOUT);
             cli_uart_rxcplt_callback(rx);
         }
-        if (UART_IsTxBufferFreed(UART_STDOUT))
-        {
-            cli_uart_txcplt_callback();
-        }
-        toggle_red_led();
     }
     else
     {
         interrupt_handler();
     }
-    xputs(".");
     HAL_EPIC_Clear(0xFFFFFFFF);
 }
 __weak_symbol void interrupt_handler(void)
@@ -120,14 +114,13 @@ static HAL_StatusTypeDef my_uart_init()
         UART_CONTROL1_PCE_M | //Enable parity check
         UART_CONTROL1_PS_M | //Odd parity
         UART_CONTROL1_M_9BIT_M | //9 bit packet
-        UART_CONTROL1_RXNEIE_M | //Received interrupt
-        UART_CONTROL1_TCIE_M; //Transmitted interrupt
+        UART_CONTROL1_RXNEIE_M; //Received interrupt
     xdev_out(xputc);
     ret = UART_Init(UART_1, 32, control_1, 0, 0) ? //1Mbaud
         HAL_OK : HAL_ERROR;
 
     //Setup interrupt receiver buffer
-    HAL_EPIC_MaskLevelSet(HAL_EPIC_UART_1_MASK);
+    HAL_EPIC_MaskEdgeSet(HAL_EPIC_UART_1_MASK);
 
     return ret;
 }
@@ -149,11 +142,16 @@ HAL_StatusTypeDef my_hal_init(void)
     SystemClock_Config();
     __HAL_PCC_EPIC_CLK_ENABLE();
     CHECK_ERROR(my_uart_init(), "UART init failed");
+    xputs("UART init finished\n");
     CHECK_ERROR(WDT_Init(), "WDT init failed");
+    xputs("WDT init finished\n");
     CHECK_ERROR(GPIO_Init(), "GPIO init failed");
+    xputs("GPIO init finished\n");
     CHECK_ERROR(Timer32_Micros_Init(), "Timer init failed");
+    xputs("Timer init finished\n");
     HAL_EPIC_Clear(0xFFFFFFFF);
     HAL_IRQ_EnableInterrupts();
+    xputs("EPIC init finished\n");
 
     return ret;
 }

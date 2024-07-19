@@ -22,7 +22,6 @@ int main()
         if (check_soft_timer(&cli_timer))
         {
             cli_run();
-            
         }
     }
 }
