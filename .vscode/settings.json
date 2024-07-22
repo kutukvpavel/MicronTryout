@@ -13,6 +13,7 @@
         "cstdlib": "c",
         "mik32_hal_irq.h": "c",
         "mik32_hal_scr1_timer.h": "c",
-        "sys_command_line.h": "c"
+        "sys_command_line.h": "c",
+        "stddef.h": "c"
     }
 }

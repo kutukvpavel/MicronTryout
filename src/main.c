@@ -10,6 +10,7 @@ int main()
 { 
     HAL_StatusTypeDef init_result = my_hal_init();
     xprintf("Init result: %" PRIu32 "\n", init_result);
+    if (__builtin_expect(init_result != HAL_OK, 0)) while (1);
     cli_init();
 
     while (1)
@@ -23,5 +24,7 @@ int main()
         {
             cli_run();
         }
+        delay_ms(1);
     }
+    __unreachable();
 }

@@ -29,13 +29,13 @@ void trap_handler()
     }
     HAL_EPIC_Clear(0xFFFFFFFF);
 }
-__weak_symbol void interrupt_handler(void)
+__attribute__((__weak__)) void interrupt_handler(void)
 {
     
 }
 
-WDT_HandleTypeDef hwdt = {};
-SCR1_TIMER_HandleTypeDef hscr1 = {};
+static WDT_HandleTypeDef hwdt = {};
+static SCR1_TIMER_HandleTypeDef hscr1 = {};
 
 static PCC_ConfigErrorsTypeDef SystemClock_Config(void)
 {
@@ -54,7 +54,7 @@ static PCC_ConfigErrorsTypeDef SystemClock_Config(void)
     PCC_OscInit.RTCClockCPUSelection = PCC_CPU_RTC_CLOCK_SOURCE_OSC32K;
     return HAL_PCC_Config(&PCC_OscInit);
 }
-HAL_StatusTypeDef GPIO_Init(void)
+static HAL_StatusTypeDef GPIO_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -92,16 +92,18 @@ static HAL_StatusTypeDef Timer32_Micros_Init(void)
 
     return res;
 }
-HAL_StatusTypeDef WDT_Init()
+static HAL_StatusTypeDef WDT_Init()
 {
     HAL_StatusTypeDef ret;
 
     hwdt.Instance = WDT;
-    hwdt.Init.Clock = HAL_WDT_OSC32M;
-    hwdt.Init.ReloadMs = 500;
+    hwdt.Init.Clock = HAL_WDT_OSC32K;
+    hwdt.Init.ReloadMs = 1000;
     ret = HAL_WDT_Init(&hwdt, WDT_TIMEOUT_DEFAULT);
     if (ret != HAL_OK) return ret;
-    return HAL_WDT_Start(&hwdt, WDT_TIMEOUT_DEFAULT);
+    ret = HAL_WDT_Start(&hwdt, WDT_TIMEOUT_DEFAULT);
+    if (ret != HAL_OK) return ret;
+    return HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT);
 }
 static HAL_StatusTypeDef my_uart_init()
 {
@@ -124,7 +126,7 @@ static HAL_StatusTypeDef my_uart_init()
 
     return ret;
 }
-void SCR1_Init(void)
+static void SCR1_Init(void)
 {
     hscr1.Instance = SCR1_TIMER;
 	hscr1.ClockSource = SCR1_TIMER_CLKSRC_INTERNAL; //внутренняя герцовка
@@ -139,14 +141,17 @@ HAL_StatusTypeDef my_hal_init(void)
 
     HAL_Init();
     __HAL_PCC_PM_CLK_ENABLE();
-    SystemClock_Config();
+    PCC_ConfigErrorsTypeDef clock_errors = SystemClock_Config();
     __HAL_PCC_EPIC_CLK_ENABLE();
     CHECK_ERROR(my_uart_init(), "UART init failed");
     xputs("UART init finished\n");
+    xprintf("PCC init error codes: %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 "\n",
+        clock_errors.FreqMonRef, clock_errors.SetOscSystem, clock_errors.RTCClock, clock_errors.CPURTCClock);
     CHECK_ERROR(WDT_Init(), "WDT init failed");
     xputs("WDT init finished\n");
     CHECK_ERROR(GPIO_Init(), "GPIO init failed");
     xputs("GPIO init finished\n");
+    SCR1_Init();
     CHECK_ERROR(Timer32_Micros_Init(), "Timer init failed");
     xputs("Timer init finished\n");
     HAL_EPIC_Clear(0xFFFFFFFF);
