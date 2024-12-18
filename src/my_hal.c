@@ -82,7 +82,7 @@ static HAL_StatusTypeDef GPIO_Init(void)
     __HAL_PCC_GPIO_IRQ_CLK_ENABLE();
 
     //Init port 0
-    GPIO_InitStruct.Pin = GPIO_PIN_9 | GPIO_PIN_10;
+    GPIO_InitStruct.Pin = GPIO_PIN_2 | GPIO_PIN_4 | GPIO_PIN_9 | GPIO_PIN_10;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_GPIO_OUTPUT;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
     return HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
@@ -141,6 +141,8 @@ static HAL_StatusTypeDef Timers_PWM_Init(void)
     //xputs("Channel 0\n");
     CHECK_ERROR(HAL_Timer32_Channel_Init(&htim_main_0_ch_4), "Main 0 PWM channel init failed");
     if (ret != HAL_OK) return ret;
+
+    delay_us(PWM_PHASE_DELAY);
 
     htim_main_0_ch_2.TimerInstance = htim_main_0.Instance;
     htim_main_0_ch_2.ChannelIndex = TIMER32_CHANNEL_1;
@@ -309,17 +311,7 @@ HAL_StatusTypeDef my_hal_init(void)
 #endif
     CHECK_ERROR(GPIO_Init(), "GPIO init failed");
     xputs("GPIO init finished\n");
-    SCR1_Init();
     CHECK_ERROR(Timer32_Micros_Init(), "Timer Micros init failed");
-    CHECK_ERROR(Timers_PWM_Init(), "Timer PWM init failed");
-    xputs("Timer init finished\n");
-    CHECK_ERROR(SPI_Init(), "SPI init failed");
-    xputs("SPI init fininshed\n");
-    CHECK_ERROR(DMA_Init(), "DMA init failed");
-    xputs("DMA init finished\n");
-    HAL_EPIC_Clear(0xFFFFFFFF);
-    HAL_IRQ_EnableInterrupts();
-    xputs("EPIC init finished\n");
 
     return ret;
 }
@@ -397,4 +389,13 @@ HAL_StatusTypeDef set_pwm_duty(motor_t ch, uint16_t duty)
     default:
         return HAL_ASSERTION_FAILED;
     }
+}
+
+void toggle_soft_pwm1(void)
+{
+    HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_2);
+}
+void toggle_soft_pwm2(void)
+{
+    HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_4);
 }

@@ -11,7 +11,8 @@
 
 #define ENABLE_WDT 1
 
-#define PWM_TOP 16000
+#define PWM_TOP 16000u
+#define PWM_PHASE_DELAY 500 //us
 
 #define TIMER_MICROS TIMER32_2
 #define UART_STDOUT UART_1
@@ -42,8 +43,8 @@ HAL_StatusTypeDef my_hal_init(void);
 void delay_us(uint32_t us);
 void toggle_red_led(void);
 void toggle_green_led(void);
-HAL_StatusTypeDef spi_dummy_transmit(void);
-HAL_StatusTypeDef set_pwm_duty(motor_t ch, uint16_t duty);
+void toggle_soft_pwm1(void);
+void toggle_soft_pwm2(void);
 
 extern inline uint32_t get_micros(void);
 extern inline uint32_t get_time_past(uint32_t from);
