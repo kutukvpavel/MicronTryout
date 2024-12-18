@@ -8,12 +8,8 @@
 #include <mik32_hal_irq.h>
 #include <uart.h>
 
-#define USE_ADC_CH_0 0 //Be careful if using JTAG, this is P0.13 which also serves as TMS. Switched off by default.
-#if USE_ADC_CH_0
-    #define TOTAL_ADC_CHANNELS_IN_USE 5
-#else
-    #define TOTAL_ADC_CHANNELS_IN_USE 4
-#endif
+#define USE_JTAG 1 //Be careful with pins 0.13 and 0.11
+#define TOTAL_ADC_CHANNELS_IN_USE 8
 
 #define TIMER_MICROS TIMER32_2
 #define UART_STDOUT UART_1

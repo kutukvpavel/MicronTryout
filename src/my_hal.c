@@ -17,13 +17,13 @@
 static ADC_HandleTypeDef hadc = {};
 static uint8_t adc_channels_in_use[] = {
     ADC_CHANNEL0,
+    ADC_CHANNEL1,
     ADC_CHANNEL2,
     ADC_CHANNEL3,
-    ADC_CHANNEL6
-#if USE_ADC_CH_0
-    ,
+    ADC_CHANNEL4,
+    ADC_CHANNEL5,
+    ADC_CHANNEL6,
     ADC_CHANNEL7
-#endif
 };
 
 static void UART_putc(char c)
@@ -57,18 +57,18 @@ static HAL_StatusTypeDef GPIO_Init(void)
     __HAL_PCC_GPIO_2_CLK_ENABLE();
     __HAL_PCC_GPIO_IRQ_CLK_ENABLE();
 
-    //Init port 0
+    //Init port 0. Initialize all possible pins to analog
     GPIO_InitStruct.Pin = 
-#if USE_ADC_CH_0
-        GPIO_PIN_13 | 
+#if !USE_JTAG
+        GPIO_PIN_13 | GPIO_PIN_11 |
 #endif
-        GPIO_PIN_9 | GPIO_PIN_7; //ADC channels 0, 2, 3
+        GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_2;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
     return HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
 
-    //Init port 1
-    GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_5; //ADC channels 6, 7
+    //Init port 1. Initialize all possible pins to analog
+    GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_5;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
     return HAL_GPIO_Init(GPIO_1, &GPIO_InitStruct);
@@ -185,8 +185,8 @@ uint32_t get_micros(void)
 }
 
 //Weak overrides
-/*void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
+void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 {
     //I don't trust HAL with GPIO mode initialization and prefer to do it myself. So:
     __HAL_PCC_ANALOG_REGS_CLK_ENABLE();
-}*/
+}

@@ -7,6 +7,16 @@ soft_timer cli_timer = { .interval = 1000000 };
 
 float adc_channel_values[TOTAL_ADC_CHANNELS_IN_USE] = { 0 };
 
+/**
+ * 
+    Channel Port    Pin
+    3	    0	    2
+    4	    0	    4
+    5	    0	    7
+
+ * 
+ */
+
 int main()
 {
     HAL_StatusTypeDef init_result = my_hal_init();
