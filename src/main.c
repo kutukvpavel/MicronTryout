@@ -1,46 +1,51 @@
 #include <xprintf.h>
 
 #include "my_hal.h"
-#include "sys_command_line.h"
 
-soft_timer led_timer = { .interval = 1000000 };
-soft_timer cli_timer = { .interval = 5000 };
-soft_timer spi_timer = { .interval = 12000 };
+soft_timer adc_timer = { .interval = 10000 };
+soft_timer cli_timer = { .interval = 1000000 };
+
+float adc_channel_values[TOTAL_ADC_CHANNELS_IN_USE] = { 0 };
 
 int main()
-{ 
+{
     HAL_StatusTypeDef init_result = my_hal_init();
     xprintf("Init result: %" PRIu32 "\n", init_result);
     if (__builtin_expect(init_result != HAL_OK, 0)) while (1);
-    cli_init();
+
+    start_adc_conversion(adc_channels_in_use_ptr[0]);
 
     while (1)
     {
-        wdt_reset();
-        if (check_soft_timer(&spi_timer))
+        if (check_soft_timer(&adc_timer))
         {
-            static uint16_t duty0 = 0;
-            static uint16_t duty1 = PWM_TOP;
+            static size_t current_adc_channel_index = 0;
+            static bool first_conversion_discarded = false;
 
-            spi_dummy_transmit();
-            set_pwm_duty(MOTOR_MAIN_0, duty0);
-            set_pwm_duty(MOTOR_MAIN_1, duty1);
-            duty0 += 10;
-            if (duty0 >= PWM_TOP) duty0 = 0;
-            duty1 -= 10;
-            if (duty1 <= 0) duty1 = PWM_TOP;
-        }
-        if (check_soft_timer(&led_timer))
-        {
-            //static float dummy = 0;
-
-            toggle_green_led();
-            //xprintf("Tick %.2f\n", dummy);
-            //dummy += 1.5f;
+            if (get_adc_conversion_finished())
+            {
+                if (first_conversion_discarded)
+                {
+                    adc_channel_values[current_adc_channel_index] = get_adc_voltage();
+                    start_adc_conversion(adc_channels_in_use_ptr[++current_adc_channel_index]);
+                    if (current_adc_channel_index >= (TOTAL_ADC_CHANNELS_IN_USE - 1)) current_adc_channel_index = 0;
+                    first_conversion_discarded = false;
+                }
+                else
+                {
+                    start_adc_conversion(adc_channels_in_use_ptr[current_adc_channel_index]);
+                    first_conversion_discarded = true;
+                }
+            }
         }
         if (check_soft_timer(&cli_timer))
         {
-            cli_run();
+            for (size_t i = 0; i < TOTAL_ADC_CHANNELS_IN_USE; i++)
+            {
+                xprintf("CH #%" PRIu32 ": %.3f V; ",
+                    (uint32_t)(adc_channels_in_use_ptr[i]), adc_channel_values[i]);   
+            }
+            xputc('\r');
         }
     }
     __unreachable();
