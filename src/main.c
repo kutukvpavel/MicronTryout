@@ -37,8 +37,8 @@ int main()
                 if (first_conversion_discarded)
                 {
                     adc_channel_values[current_adc_channel_index] = get_adc_voltage();
-                    start_adc_conversion(adc_channels_in_use_ptr[++current_adc_channel_index]);
-                    if (current_adc_channel_index >= (TOTAL_ADC_CHANNELS_IN_USE - 1)) current_adc_channel_index = 0;
+                    if (++current_adc_channel_index >= TOTAL_ADC_CHANNELS_IN_USE) current_adc_channel_index = 0;
+                    start_adc_conversion(adc_channels_in_use_ptr[current_adc_channel_index]);
                     first_conversion_discarded = false;
                 }
                 else
