@@ -21,8 +21,8 @@ static uint8_t adc_channels_in_use[] = {
     ADC_CHANNEL2,
     ADC_CHANNEL3,
     ADC_CHANNEL4,
-    ADC_CHANNEL5,
-    ADC_CHANNEL6,
+    /*ADC_CHANNEL5,
+    ADC_CHANNEL6,*/
     ADC_CHANNEL7
 };
 
@@ -51,6 +51,7 @@ static PCC_ConfigErrorsTypeDef SystemClock_Config(void)
 static HAL_StatusTypeDef GPIO_Init(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
+    HAL_StatusTypeDef ret;
 
     __HAL_PCC_GPIO_0_CLK_ENABLE(); //Needed, because GPIO lacks MspInit (desing decision)
     __HAL_PCC_GPIO_1_CLK_ENABLE();
@@ -60,18 +61,20 @@ static HAL_StatusTypeDef GPIO_Init(void)
     //Init port 0. Initialize all possible pins to analog
     GPIO_InitStruct.Pin = 
 #if !USE_JTAG
-        GPIO_PIN_13 | GPIO_PIN_11 |
+        GPIO_PIN_13 | /*GPIO_PIN_11 |*/
 #endif
-        GPIO_PIN_9 | GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_2;
+        /*GPIO_PIN_9 |*/ GPIO_PIN_7 | GPIO_PIN_4 | GPIO_PIN_2;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
-    return HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
+    if ((ret = HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct)) != HAL_OK) return ret;
 
     //Init port 1. Initialize all possible pins to analog
     GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_5;
     GPIO_InitStruct.Mode = HAL_GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = HAL_GPIO_PULL_NONE;
-    return HAL_GPIO_Init(GPIO_1, &GPIO_InitStruct);
+    ret = HAL_GPIO_Init(GPIO_1, &GPIO_InitStruct);
+
+    return ret;
 }
 static HAL_StatusTypeDef Timer32_Micros_Init(void)
 {

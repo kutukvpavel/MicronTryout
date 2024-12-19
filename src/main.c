@@ -7,16 +7,6 @@ soft_timer cli_timer = { .interval = 1000000 };
 
 float adc_channel_values[TOTAL_ADC_CHANNELS_IN_USE] = { 0 };
 
-/**
- * 
-    Channel Port    Pin
-    3	    0	    2
-    4	    0	    4
-    5	    0	    7
-
- * 
- */
-
 int main()
 {
     HAL_StatusTypeDef init_result = my_hal_init();
@@ -24,28 +14,22 @@ int main()
     if (__builtin_expect(init_result != HAL_OK, 0)) while (1);
 
     start_adc_conversion(adc_channels_in_use_ptr[0]);
+    while (!get_adc_conversion_finished());
+    start_adc_conversion(adc_channels_in_use_ptr[1]);
 
     while (1)
     {
         if (check_soft_timer(&adc_timer))
         {
-            static size_t current_adc_channel_index = 0;
-            static bool first_conversion_discarded = false;
+            static uint8_t current_adc_channel_index = 0;
+            static uint8_t next_adc_channel_index = 1;
 
             if (get_adc_conversion_finished())
             {
-                if (first_conversion_discarded)
-                {
-                    adc_channel_values[current_adc_channel_index] = get_adc_voltage();
-                    if (++current_adc_channel_index >= TOTAL_ADC_CHANNELS_IN_USE) current_adc_channel_index = 0;
-                    start_adc_conversion(adc_channels_in_use_ptr[current_adc_channel_index]);
-                    first_conversion_discarded = false;
-                }
-                else
-                {
-                    start_adc_conversion(adc_channels_in_use_ptr[current_adc_channel_index]);
-                    first_conversion_discarded = true;
-                }
+                adc_channel_values[current_adc_channel_index] = get_adc_voltage();
+                start_adc_conversion(adc_channels_in_use_ptr[next_adc_channel_index]);
+                current_adc_channel_index = next_adc_channel_index;
+                next_adc_channel_index = (next_adc_channel_index + 1u) % TOTAL_ADC_CHANNELS_IN_USE;
             }
         }
         if (check_soft_timer(&cli_timer))

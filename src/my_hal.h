@@ -8,8 +8,8 @@
 #include <mik32_hal_irq.h>
 #include <uart.h>
 
-#define USE_JTAG 1 //Be careful with pins 0.13 and 0.11
-#define TOTAL_ADC_CHANNELS_IN_USE 8
+#define USE_JTAG 0 //Be careful with pins 0.13 and 0.11
+#define TOTAL_ADC_CHANNELS_IN_USE 6u
 
 #define TIMER_MICROS TIMER32_2
 #define UART_STDOUT UART_1
