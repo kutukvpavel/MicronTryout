@@ -122,6 +122,7 @@ static HAL_StatusTypeDef ADC_Init(void)
     hadc.Init.EXTRef = ADC_EXTREF_OFF;    /* Выбор источника опорного напряжения: «1» - внешний; «0» - встроенный */
     hadc.Init.EXTClb = ADC_EXTCLB_ADCREF; /* Выбор источника внешнего опорного напряжения: «1» - внешний вывод; «0» - настраиваемый ОИН */
     HAL_ADC_Init(&hadc);
+    HAL_ADC_ContinuousEnable(&hadc);
     
     return HAL_OK;
 }
@@ -143,12 +144,14 @@ HAL_StatusTypeDef my_hal_init(void)
     xputs("UART init finished\n");
     xprintf("PCC init error codes: %" PRIu32 ", %" PRIu32 ", %" PRIu32 ", %" PRIu32 "\n",
         clock_errors.FreqMonRef, clock_errors.SetOscSystem, clock_errors.RTCClock, clock_errors.CPURTCClock);
-    CHECK_ERROR(GPIO_Init(), "GPIO init failed");
-    xputs("GPIO init finished\n");
     CHECK_ERROR(Timer32_Micros_Init(), "Timer Micros init failed");
     xputs("TIM32 micros init finished\n");
+    CHECK_ERROR(GPIO_Init(), "GPIO init failed");
+    xputs("GPIO init finished\n");
     CHECK_ERROR(ADC_Init(), "ADC init failed");
     xputs("ADC init finished\n");
+
+    xputs(FW_VERSION "\n");
 
     return ret;
 }
@@ -158,13 +161,10 @@ void delay_us(uint32_t us)
     uint32_t start = TIMER_MICROS->VALUE;
     while ((TIMER_MICROS->VALUE - start) < us);
 }
-void start_adc_conversion(uint8_t channel)
+void set_adc_channel(uint8_t channel)
 {
-    HAL_ADC_SINGLE_AND_SET_CH(hadc.Instance, channel);
-}
-bool get_adc_conversion_finished(void)
-{
-    return hadc.Instance->ADC_VALID > 0;
+    hadc.Init.Sel = channel;
+    HAL_ADC_ChannelSet(&hadc);
 }
 float get_adc_voltage(void)
 {
@@ -188,8 +188,3 @@ uint32_t get_micros(void)
 }
 
 //Weak overrides
-void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
-{
-    //I don't trust HAL with GPIO mode initialization and prefer to do it myself. So:
-    __HAL_PCC_ANALOG_REGS_CLK_ENABLE();
-}

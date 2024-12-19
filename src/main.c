@@ -2,7 +2,9 @@
 
 #include "my_hal.h"
 
-soft_timer adc_timer = { .interval = 10000 };
+#define CONVERSIONS_TO_DISCARD 0
+
+soft_timer adc_timer = { .interval = 500 };
 soft_timer cli_timer = { .interval = 1000000 };
 
 float adc_channel_values[TOTAL_ADC_CHANNELS_IN_USE] = { 0 };
@@ -13,24 +15,17 @@ int main()
     xprintf("Init result: %" PRIu32 "\n", init_result);
     if (__builtin_expect(init_result != HAL_OK, 0)) while (1);
 
-    start_adc_conversion(adc_channels_in_use_ptr[0]);
-    while (!get_adc_conversion_finished());
-    start_adc_conversion(adc_channels_in_use_ptr[1]);
+    set_adc_channel(adc_channels_in_use_ptr[0]);
 
     while (1)
     {
         if (check_soft_timer(&adc_timer))
         {
-            static uint8_t current_adc_channel_index = 0;
-            static uint8_t next_adc_channel_index = 1;
+            static size_t current_adc_channel_index = 0;
 
-            if (get_adc_conversion_finished())
-            {
-                adc_channel_values[current_adc_channel_index] = get_adc_voltage();
-                start_adc_conversion(adc_channels_in_use_ptr[next_adc_channel_index]);
-                current_adc_channel_index = next_adc_channel_index;
-                next_adc_channel_index = (next_adc_channel_index + 1u) % TOTAL_ADC_CHANNELS_IN_USE;
-            }
+            adc_channel_values[current_adc_channel_index] = get_adc_voltage();
+            if (++current_adc_channel_index >= TOTAL_ADC_CHANNELS_IN_USE) current_adc_channel_index = 0;
+            set_adc_channel(adc_channels_in_use_ptr[current_adc_channel_index]);
         }
         if (check_soft_timer(&cli_timer))
         {

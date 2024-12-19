@@ -8,8 +8,10 @@
 #include <mik32_hal_irq.h>
 #include <uart.h>
 
+#define FW_VERSION "2"
+
 #define USE_JTAG 0 //Be careful with pins 0.13 and 0.11
-#define TOTAL_ADC_CHANNELS_IN_USE 6u
+#define TOTAL_ADC_CHANNELS_IN_USE 8
 
 #define TIMER_MICROS TIMER32_2
 #define UART_STDOUT UART_1
@@ -33,8 +35,7 @@ extern const uint8_t* const adc_channels_in_use_ptr;
 HAL_StatusTypeDef my_hal_init(void);
 
 void delay_us(uint32_t us);
-void start_adc_conversion(uint8_t channel);
-bool get_adc_conversion_finished(void);
+void set_adc_channel(uint8_t channel);
 float get_adc_voltage(void);
 
 extern inline uint32_t get_micros(void);
