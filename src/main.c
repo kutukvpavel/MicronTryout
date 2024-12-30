@@ -1,10 +1,8 @@
 #include <xprintf.h>
+#include <stdlib.h>
 
 #include "my_hal.h"
 
-#define CONVERSIONS_TO_DISCARD 0
-
-soft_timer adc_timer = { .interval = 500 };
 soft_timer cli_timer = { .interval = 1000000 };
 
 float adc_channel_values[TOTAL_ADC_CHANNELS_IN_USE] = { 0 };
@@ -15,32 +13,45 @@ int main()
     xprintf("Init result: %" PRIu32 "\n", init_result);
     if (__builtin_expect(init_result != HAL_OK, 0)) while (1);
 
-    set_adc_channel(adc_channels_in_use_ptr[0]);
-
     while (1)
     {
-        if (check_soft_timer(&adc_timer))
-        {
-            //static size_t current_adc_channel_index = 0;
-            static uint16_t current_dac_voltage = 0;
+#define START() start = get_micros()
+#define STOP() stop = get_micros()
 
-            /*adc_channel_values[current_adc_channel_index] = get_adc_voltage();
-            if (++current_adc_channel_index >= TOTAL_ADC_CHANNELS_IN_USE) current_adc_channel_index = 0;
-            set_adc_channel(adc_channels_in_use_ptr[current_adc_channel_index]);*/
+        int32_t i1 = rand();
+        int32_t i2 = rand();
+        float f1 = rand() * 0.01f;
+        float f2 = rand() * 0.01f;
+        uint32_t start;
+        uint32_t stop;
+        float f;
+        int32_t i;
+        
+        START();
+        f = f1 / f2;
+        STOP();
 
-            current_dac_voltage += 2;
-            if (current_dac_voltage > 0x0FFF) current_dac_voltage = 0;
-            set_dac(current_dac_voltage);
-        }
-        /*if (check_soft_timer(&cli_timer))
-        {
-            for (size_t i = 0; i < TOTAL_ADC_CHANNELS_IN_USE; i++)
-            {
-                xprintf("CH #%" PRIu32 ": %.3f V; ",
-                    (uint32_t)(adc_channels_in_use_ptr[i]), adc_channel_values[i]);   
-            }
-            xputc('\r');
-        }*/
+        xprintf("Div t = %" PRIu32 ", f = %f\n", stop - start, f);
+
+        START();
+        f = f1 * f2;
+        STOP();
+
+        xprintf("Mul t = %" PRIu32 ", f = %f\n", stop - start, f);
+        
+        START();
+        i = i1 / i2;
+        STOP();
+
+        xprintf("Div t = %" PRIu32 ", i = %" PRId32 "\n", stop - start, i);
+
+        START();
+        i = i1 * i2;
+        STOP();
+
+        xprintf("Mul t = %" PRIu32 ", i = %" PRId32 "\n", stop - start, i);
+
+        delay_us(1000000);
     }
     __unreachable();
 }
