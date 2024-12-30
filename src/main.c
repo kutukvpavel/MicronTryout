@@ -21,13 +21,18 @@ int main()
     {
         if (check_soft_timer(&adc_timer))
         {
-            static size_t current_adc_channel_index = 0;
+            //static size_t current_adc_channel_index = 0;
+            static uint16_t current_dac_voltage = 0;
 
-            adc_channel_values[current_adc_channel_index] = get_adc_voltage();
+            /*adc_channel_values[current_adc_channel_index] = get_adc_voltage();
             if (++current_adc_channel_index >= TOTAL_ADC_CHANNELS_IN_USE) current_adc_channel_index = 0;
-            set_adc_channel(adc_channels_in_use_ptr[current_adc_channel_index]);
+            set_adc_channel(adc_channels_in_use_ptr[current_adc_channel_index]);*/
+
+            current_dac_voltage += 2;
+            if (current_dac_voltage > 0x0FFF) current_dac_voltage = 0;
+            set_dac(current_dac_voltage);
         }
-        if (check_soft_timer(&cli_timer))
+        /*if (check_soft_timer(&cli_timer))
         {
             for (size_t i = 0; i < TOTAL_ADC_CHANNELS_IN_USE; i++)
             {
@@ -35,7 +40,7 @@ int main()
                     (uint32_t)(adc_channels_in_use_ptr[i]), adc_channel_values[i]);   
             }
             xputc('\r');
-        }
+        }*/
     }
     __unreachable();
 }

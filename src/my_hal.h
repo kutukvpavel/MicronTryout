@@ -10,8 +10,10 @@
 
 #define FW_VERSION "2"
 
-#define USE_JTAG 0 //Be careful with pins 0.13 and 0.11
-#define TOTAL_ADC_CHANNELS_IN_USE 8
+#define USE_JTAG 1 //Be careful with pins 0.13 and 0.11
+#define TOTAL_ADC_CHANNELS_IN_USE 6
+
+#define REFERENCE_VOLTAGE 3.0f
 
 #define TIMER_MICROS TIMER32_2
 #define UART_STDOUT UART_1
@@ -37,6 +39,7 @@ HAL_StatusTypeDef my_hal_init(void);
 void delay_us(uint32_t us);
 void set_adc_channel(uint8_t channel);
 float get_adc_voltage(void);
+void set_dac(uint16_t v);
 
 extern inline uint32_t get_micros(void);
 extern inline uint32_t get_time_past(uint32_t from);

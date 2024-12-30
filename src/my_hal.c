@@ -6,6 +6,7 @@
 #include <mik32_hal_pcc.h>
 #include <mik32_hal_gpio.h>
 #include <mik32_hal_adc.h>
+#include <mik32_hal_dac.h>
 #include <assert.h>
 
 #define CHECK_ERROR(status, msg) do { HAL_StatusTypeDef s = (status); \
@@ -15,6 +16,7 @@
 //Private
 
 static ADC_HandleTypeDef hadc = {};
+DAC_HandleTypeDef hdac1;
 static uint8_t adc_channels_in_use[] = {
     ADC_CHANNEL0,
     ADC_CHANNEL1,
@@ -126,6 +128,20 @@ static HAL_StatusTypeDef ADC_Init(void)
     
     return HAL_OK;
 }
+static void DAC_Init(void)
+{
+    hdac1.Instance = ANALOG_REG;
+
+    hdac1.Instance_dac = HAL_DAC0;
+    /* Выбор делителя частоты тактирования ЦАП, определяется как F_ЦАП=F_IN/(DIV+1) */
+    hdac1.Init.DIV = 31;    // 1 МГц
+    /* Выбор источника опорного напряжения: «1» - внешний; «0» - встроенный */                 
+    hdac1.Init.EXTRef = DAC_EXTREF_OFF;
+    /* Выбор источника внешнего опорного напряжения: «1» - внешний вывод; «0» - настраиваемый ОИН */
+    hdac1.Init.EXTClb = DAC_EXTCLB_DACREF;
+    
+    HAL_DAC_Init(&hdac1);
+}
 
 //Public
 const uint8_t* const adc_channels_in_use_ptr = adc_channels_in_use;
@@ -150,6 +166,8 @@ HAL_StatusTypeDef my_hal_init(void)
     xputs("GPIO init finished\n");
     CHECK_ERROR(ADC_Init(), "ADC init failed");
     xputs("ADC init finished\n");
+    DAC_Init();
+    xputs("DAC init finished\n");
 
     xputs(FW_VERSION "\n");
 
@@ -170,7 +188,10 @@ float get_adc_voltage(void)
 {
     return HAL_ADC_GetValue(&hadc) * (1.2f / 4095.0f);
 }
-
+void set_dac(uint16_t v)
+{
+    HAL_DAC_SetValue(&hdac1, v);
+}
 
 bool check_soft_timer(soft_timer* t)
 {
