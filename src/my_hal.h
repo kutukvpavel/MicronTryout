@@ -9,7 +9,7 @@
 #include <mik32_hal_wdt.h>
 #include <uart.h>
 
-#define ENABLE_WDT 0
+#define ENABLE_WDT 1
 
 #define PWM_TOP 16000
 

@@ -167,11 +167,12 @@ static HAL_StatusTypeDef WDT_Init()
     hwdt.Instance = WDT;
     hwdt.Init.Clock = HAL_WDT_OSC32K;
     hwdt.Init.ReloadMs = 1000;
-    ret = HAL_WDT_Init(&hwdt, WDT_TIMEOUT_DEFAULT);
-    if (ret != HAL_OK) return ret;
-    ret = HAL_WDT_Start(&hwdt, WDT_TIMEOUT_DEFAULT);
-    if (ret != HAL_OK) return ret;
-    return HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT);
+    CHECK_ERROR(HAL_WDT_Init(&hwdt, WDT_TIMEOUT_DEFAULT), "HAL_WDT_Init failed");
+    HAL_DelayMs(1); //Required
+    CHECK_ERROR(HAL_WDT_Start(&hwdt, WDT_TIMEOUT_DEFAULT), "Failed to start WDT");
+    CHECK_ERROR(HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT), "Failed to refresh WDT");
+
+    return ret;
 }
 static HAL_StatusTypeDef my_uart_init()
 {
