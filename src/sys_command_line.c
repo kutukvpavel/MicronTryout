@@ -237,7 +237,7 @@ void cli_init()
 /*
  * Callback function for UART IRQ when it is done receiving a char
  */
-void cli_uart_rxcplt_callback(unsigned char rx){
+void __always_inline cli_uart_rxcplt_callback(unsigned char rx){
 	shell_queue_in(&cli_rx_buff, &rx);
 }
 

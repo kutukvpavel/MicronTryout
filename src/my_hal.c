@@ -8,6 +8,7 @@
 #include <mik32_hal_dma.h>
 #include <mik32_hal_scr1_timer.h>
 #include <mik32_hal_spi.h>
+#include "sys_command_line.h"
 
 #define CHECK_ERROR(status, msg) do { HAL_StatusTypeDef s = (status); \
         if (s != HAL_OK) { ret = s; xprintf(msg ", %" PRIu32 "\n", s); } \
@@ -24,13 +25,13 @@ static DMA_InitTypeDef hdma;
 static DMA_ChannelHandleTypeDef hdma_ch0;
 static DMA_ChannelHandleTypeDef hdma_ch1;
 
-void trap_handler()
+void __attribute__(( optimize("O3") )) RAM_ATTR trap_handler(void)
 {
     if (UART_STDOUT_EPIC_CHECK())
     {
-        if (UART_IsRxFifoFull(UART_STDOUT)) 
+        if ((UART_STDOUT->FLAGS & UART_FLAGS_RXNE_M) != 0) 
         {
-            unsigned char rx = (unsigned char)UART_ReadByte(UART_STDOUT);
+            unsigned char rx = (unsigned char)(UART_STDOUT->RXDATA);
             cli_uart_rxcplt_callback(rx);
         }
     }
@@ -39,15 +40,7 @@ void trap_handler()
         HAL_SPI_CS_Enable(&hspi1, SPI_CS_0);
         HAL_DMA_ClearLocalIrq(&hdma);
     }
-    else
-    {
-        interrupt_handler();
-    }
-    HAL_EPIC_Clear(0xFFFFFFFF);
-}
-__attribute__((__weak__)) void interrupt_handler(void)
-{
-    
+    EPIC->CLEAR = 0xFFFFFFFF;
 }
 
 static void UART_putc(char c)
@@ -295,6 +288,7 @@ HAL_StatusTypeDef my_hal_init(void)
 {
     HAL_StatusTypeDef ret = HAL_OK;
 
+    write_csr(mtvec, RAM_BASE_ADDRESS);
     HAL_Init();
     __HAL_PCC_PM_CLK_ENABLE();
     PCC_ConfigErrorsTypeDef clock_errors = SystemClock_Config();

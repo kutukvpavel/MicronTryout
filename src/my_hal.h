@@ -9,7 +9,7 @@
 #include <mik32_hal_wdt.h>
 #include <uart.h>
 
-#define ENABLE_WDT 1
+#define ENABLE_WDT 0
 
 #define PWM_TOP 16000
 
@@ -50,8 +50,3 @@ extern inline uint32_t get_time_past(uint32_t from);
 extern inline bool check_soft_timer(soft_timer* t);
 extern inline void wdt_reset();
 extern inline void delay_ms(uint32_t ms);
-
-//ISRs
-
-extern void interrupt_handler(void);
-extern void cli_uart_rxcplt_callback(unsigned char rx);
