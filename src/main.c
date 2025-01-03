@@ -18,14 +18,18 @@ int main()
 #define START() start = get_micros()
 #define STOP() stop = get_micros()
 
-        int32_t i1 = rand();
-        int32_t i2 = rand();
+        int64_t i1 = rand();
+        int64_t i2 = rand();
         float f1 = rand() * 0.01f;
         float f2 = rand() * 0.01f;
         uint32_t start;
         uint32_t stop;
         float f;
-        int32_t i;
+        int64_t i;
+
+        START();
+        STOP();
+        xprintf("Base dt = %" PRIu32 "\n", stop - start);
         
         START();
         f = f1 / f2;
@@ -43,13 +47,13 @@ int main()
         i = i1 / i2;
         STOP();
 
-        xprintf("Div t = %" PRIu32 ", i = %" PRId32 "\n", stop - start, i);
+        xprintf("Div t = %" PRIu32 ", i = %" PRId64 "\n", stop - start, i);
 
         START();
         i = i1 * i2;
         STOP();
 
-        xprintf("Mul t = %" PRIu32 ", i = %" PRId32 "\n", stop - start, i);
+        xprintf("Mul t = %" PRIu32 ", i = %" PRId64 "\n", stop - start, i);
 
         delay_us(1000000);
     }
