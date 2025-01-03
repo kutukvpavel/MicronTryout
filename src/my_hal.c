@@ -27,6 +27,11 @@ static DMA_ChannelHandleTypeDef hdma_ch1;
 
 void __attribute__(( optimize("O3") )) RAM_ATTR trap_handler(void)
 {
+    if (EPIC_CHECK_WDT())
+    {
+        GPIO_0->OUTPUT |= GPIO_PIN_10;
+        while (1);
+    }
     if (UART_STDOUT_EPIC_CHECK())
     {
         if ((UART_STDOUT->FLAGS & UART_FLAGS_RXNE_M) != 0) 
@@ -35,7 +40,7 @@ void __attribute__(( optimize("O3") )) RAM_ATTR trap_handler(void)
             cli_uart_rxcplt_callback(rx);
         }
     }
-    else if (EPIC_CHECK_DMA())
+    if (EPIC_CHECK_DMA())
     {
         HAL_SPI_CS_Enable(&hspi1, SPI_CS_0);
         HAL_DMA_ClearLocalIrq(&hdma);
@@ -162,7 +167,7 @@ static HAL_StatusTypeDef Timers_PWM_Init(void)
 }
 static HAL_StatusTypeDef WDT_Init()
 {
-    HAL_StatusTypeDef ret;
+    HAL_StatusTypeDef ret = HAL_OK;
 
     hwdt.Instance = WDT;
     hwdt.Init.Clock = HAL_WDT_OSC32K;
@@ -171,6 +176,7 @@ static HAL_StatusTypeDef WDT_Init()
     HAL_DelayMs(1); //Required
     CHECK_ERROR(HAL_WDT_Start(&hwdt, WDT_TIMEOUT_DEFAULT), "Failed to start WDT");
     CHECK_ERROR(HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT), "Failed to refresh WDT");
+    HAL_EPIC_MaskEdgeSet(HAL_EPIC_WDT_MASK);
 
     return ret;
 }
