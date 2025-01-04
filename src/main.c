@@ -22,8 +22,8 @@ int main()
         int64_t i2 = rand();
         float f1 = rand() * 0.01f;
         float f2 = rand() * 0.01f;
-        uint32_t start;
-        uint32_t stop;
+        volatile uint32_t start;
+        volatile uint32_t stop;
         float f;
         int64_t i;
 
@@ -33,24 +33,28 @@ int main()
         
         START();
         f = f1 / f2;
+        delay_us(1);
         STOP();
 
         xprintf("Div t = %" PRIu32 ", f = %f\n", stop - start, f);
 
         START();
         f = f1 * f2;
+        delay_us(1);
         STOP();
 
         xprintf("Mul t = %" PRIu32 ", f = %f\n", stop - start, f);
         
         START();
         i = i1 / i2;
+        delay_us(1);
         STOP();
 
         xprintf("Div t = %" PRIu32 ", i = %" PRId64 "\n", stop - start, i);
 
         START();
         i = i1 * i2;
+        delay_us(1);
         STOP();
 
         xprintf("Mul t = %" PRIu32 ", i = %" PRId64 "\n", stop - start, i);
