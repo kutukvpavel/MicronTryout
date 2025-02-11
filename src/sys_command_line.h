@@ -118,7 +118,7 @@ void 		cli_run(void);
 
 void 		cli_add_command(const char *command, const char *help, uint8_t (*exec)(int argc, char *argv[]));
 
-extern inline void cli_uart_rxcplt_callback(unsigned char rx);
+void cli_uart_rxcplt_callback(unsigned char rx);
 
 _END_STD_C
 

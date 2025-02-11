@@ -1,0 +1,13 @@
+#pragma once
+
+typedef enum
+{
+    MY_ERR_ERR_STORAGE_CRC = 0,
+    MY_ERR_NVS_CRC,
+    MY_ERR_MAIN_STATE_TIMEOUT,
+    MY_ERR_OVERCURRENT,
+    MY_ERR_COPROC_TIMEOUT,
+    MY_ERR_UNKNOWN,
+
+    MY_ERR_TOTAL
+} my_err_t;

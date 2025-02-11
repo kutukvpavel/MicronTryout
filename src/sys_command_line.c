@@ -223,7 +223,6 @@ void cli_init()
 
     CLI_ADD_CMD("help", cli_help_help, cli_help);
     CLI_ADD_CMD("cls", cli_clear_help, cli_clear);
-    CLI_ADD_CMD("reset", cli_reset_help, cli_reset);
     CLI_ADD_CMD("log", cli_log_help, cli_log);
 
     if(CLI_LAST_LOG_CATEGORY > 32){
@@ -237,7 +236,7 @@ void cli_init()
 /*
  * Callback function for UART IRQ when it is done receiving a char
  */
-void __always_inline cli_uart_rxcplt_callback(unsigned char rx){
+void cli_uart_rxcplt_callback(unsigned char rx){
 	shell_queue_in(&cli_rx_buff, &rx);
 }
 
@@ -524,23 +523,6 @@ uint8_t cli_clear(int argc, char *argv[])
     TERMINAL_DISPLAY_CLEAR();
 
     return EXIT_SUCCESS;
-}
-
-/**
-  * @brief  MCU reboot
-  * @param  para addr. & length
-  * @retval True means OK
-  */
-uint8_t cli_reset(int argc, char *argv[])
-{
-	if(argc > 1){
-		xprintf("Command \"%s\" takes no argument.", argv[0]);NL1();
-		return EXIT_FAILURE;
-	}
-
-	NL1();xprintf("[END]: System Rebooting");NL1();
-	while (1);
-	return EXIT_SUCCESS;
 }
 
 void cli_add_command(const char *command, const char *help, uint8_t (*exec)(int argc, char *argv[])){

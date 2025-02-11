@@ -24,12 +24,16 @@ static TIMER32_CHANNEL_HandleTypeDef htim_main_0_ch_4 = {};
 static DMA_InitTypeDef hdma;
 static DMA_ChannelHandleTypeDef hdma_ch0;
 static DMA_ChannelHandleTypeDef hdma_ch1;
+static volatile uint32_t eeprom_error_stats = 0;
 
-void __attribute__(( optimize("O3") )) RAM_ATTR trap_handler(void)
+void RAM_ATTR trap_handler(void)
 {
     if (EPIC_CHECK_WDT())
     {
         GPIO_0->OUTPUT |= GPIO_PIN_10;
+        HAL_EPIC_MaskLevelClear(0xFFFFFFFF);
+        HAL_EPIC_MaskEdgeClear(0xFFFFFFFF);
+        EPIC->CLEAR = 0xFFFFFFFF;
         while (1);
     }
     if (UART_STDOUT_EPIC_CHECK())
@@ -44,6 +48,10 @@ void __attribute__(( optimize("O3") )) RAM_ATTR trap_handler(void)
     {
         HAL_SPI_CS_Enable(&hspi1, SPI_CS_0);
         HAL_DMA_ClearLocalIrq(&hdma);
+    }
+    if (EPIC_CHECK_EEPROM())
+    {
+        ++eeprom_error_stats;
     }
     EPIC->CLEAR = 0xFFFFFFFF;
 }
@@ -86,27 +94,6 @@ static HAL_StatusTypeDef GPIO_Init(void)
     return HAL_GPIO_Init(GPIO_0, &GPIO_InitStruct);
 
     //Init port ...
-}
-static HAL_StatusTypeDef Timer32_Micros_Init(void)
-{
-    TIMER32_HandleTypeDef htimer32;
-
-    htimer32.Instance = TIMER_MICROS;
-    htimer32.Top = 0xFFFFFFFF;
-    htimer32.State = TIMER32_STATE_DISABLE;
-    htimer32.Clock.Source = TIMER32_SOURCE_PRESCALER;
-    htimer32.Clock.Prescaler = 32; //1 MHz clock for 1uS per tick timer
-    htimer32.InterruptMask = 0;
-    htimer32.CountMode = TIMER32_COUNTMODE_FORWARD;
-    
-    HAL_StatusTypeDef res = HAL_Timer32_Init(&htimer32);
-    if (res == HAL_OK) 
-    {
-        HAL_Timer32_Value_Clear(&htimer32);
-        HAL_Timer32_Start(&htimer32);
-    }
-
-    return res;
 }
 static HAL_StatusTypeDef Timers_PWM_Init(void)
 {
@@ -172,12 +159,13 @@ static HAL_StatusTypeDef WDT_Init()
     hwdt.Instance = WDT;
     hwdt.Init.Clock = HAL_WDT_OSC32K;
     hwdt.Init.ReloadMs = 1000;
+#if ENABLE_WDT
     CHECK_ERROR(HAL_WDT_Init(&hwdt, WDT_TIMEOUT_DEFAULT), "HAL_WDT_Init failed");
     HAL_DelayMs(1); //Required
     CHECK_ERROR(HAL_WDT_Start(&hwdt, WDT_TIMEOUT_DEFAULT), "Failed to start WDT");
     CHECK_ERROR(HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT), "Failed to refresh WDT");
     HAL_EPIC_MaskEdgeSet(HAL_EPIC_WDT_MASK);
-
+#endif
     return ret;
 }
 static HAL_StatusTypeDef my_uart_init()
@@ -203,7 +191,8 @@ static HAL_StatusTypeDef my_uart_init()
 }
 static void SCR1_Init(void)
 {
-    HAL_Time_SCR1TIM_Init();
+    __HAL_SCR1_TIMER_IRQ_DISABLE();
+	HAL_SCR1_Timer_Init(HAL_SCR1_TIMER_CLKSRC_INTERNAL, 31); //1 MHz
 }
 static HAL_StatusTypeDef SPI_Init(void)
 {
@@ -311,7 +300,6 @@ HAL_StatusTypeDef my_hal_init(void)
     CHECK_ERROR(GPIO_Init(), "GPIO init failed");
     xputs("GPIO init finished\n");
     SCR1_Init();
-    CHECK_ERROR(Timer32_Micros_Init(), "Timer Micros init failed");
     CHECK_ERROR(Timers_PWM_Init(), "Timer PWM init failed");
     xputs("Timer init finished\n");
     CHECK_ERROR(SPI_Init(), "SPI init failed");
@@ -325,10 +313,14 @@ HAL_StatusTypeDef my_hal_init(void)
     return ret;
 }
 
-void delay_us(uint32_t us)
+void delay_us(uint64_t us)
 {
-    uint32_t start = TIMER_MICROS->VALUE;
-    while ((TIMER_MICROS->VALUE - start) < us);
+    uint64_t start = __HAL_SCR1_TIMER_GET_TIME();
+    uint64_t now;
+    do
+    {
+        now = __HAL_SCR1_TIMER_GET_TIME();
+    } while ((now - start) < us);
 }
 void delay_ms(uint32_t ms)
 {
@@ -345,28 +337,37 @@ void toggle_green_led(void)
     HAL_GPIO_TogglePin(GPIO_0, GPIO_PIN_9);
 }
 
-void wdt_reset()
+bool check_soft_timer_32(soft_timer_32* t)
 {
-#if ENABLE_WDT
-    HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT);
-#endif
+    bool ret = get_time_past_32(t->last_time) > t->interval;
+    if (ret) t->last_time = get_micros_32();
+    return ret;
 }
-
 bool check_soft_timer(soft_timer* t)
 {
     bool ret = get_time_past(t->last_time) > t->interval;
     if (ret) t->last_time = get_micros();
     return ret;
 }
-
-uint32_t get_time_past(uint32_t from)
+void reset_micros(void)
 {
-    return get_micros() - from;
+    __HAL_SCR1_TIMER_SET_TIME(0);
 }
-
-uint32_t get_micros(void)
+#if ENABLE_JTAG
+HAL_StatusTypeDef wdt_stop(void)
 {
-    return TIMER_MICROS->VALUE;
+    return HAL_WDT_Stop(&hwdt, WDT_TIMEOUT_DEFAULT);
+}
+HAL_StatusTypeDef wdt_start(void)
+{
+    return WDT_Init();
+}
+#endif
+void wdt_reset(void)
+{
+#if ENABLE_WDT
+    HAL_WDT_Refresh(&hwdt, WDT_TIMEOUT_DEFAULT);
+#endif
 }
 
 HAL_StatusTypeDef spi_dummy_transmit(void)
@@ -399,3 +400,15 @@ HAL_StatusTypeDef set_pwm_duty(motor_t ch, uint16_t duty)
         return HAL_ASSERTION_FAILED;
     }
 }
+
+uint32_t get_eeprom_error_stats(void)
+{
+    return eeprom_error_stats;
+}
+
+#if !ENABLE_WDT
+HAL_StatusTypeDef wdt_start(void)
+{
+    return WDT_Init();
+}
+#endif
